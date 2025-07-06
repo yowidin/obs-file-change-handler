@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "obs-file-change-handler"
+version = "0.1.0"
+description = "Move old OBS recording files to a remote host"
+readme = "README.md"
+authors = [
+    "Dennis Sitelew <yowidin@gmail.com>",
+]
+packages = [{include = "obs_file_change_handler", from = "src"}]
+
+[tool.poetry.scripts]
+obs-move-files = "obs_file_change_handler.__main__:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.14"
+paramiko = "^3.5.1"
+pydantic = ">=2.11.5"
+tomlkit = ">=0.13.3"
+python-dateutil = "^2.9.0.post0"
+tqdm = "^4.67.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+pytest-cov = "^6.0.0"
+coverage = "^7.6.7"
+pytest-mock = "^3.14.0"
+pyinstaller = "^6.11.1"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=obs_file_change_handler"
+pythonpath = ["src"]
