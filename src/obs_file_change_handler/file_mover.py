@@ -3,7 +3,7 @@ import sys
 import paramiko
 
 from argparse import ArgumentParser
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from datetime import date
 from typing import Tuple
 
@@ -97,14 +97,14 @@ class FileMover:
             raise RuntimeError(f'Invalid file date "{file_name}"')
 
 
-    def get_target_path(self, path: Path) -> Path:
+    def get_target_path(self, path: Path) -> PurePosixPath:
         file_date, file_name = self.parse_file_date(path)
 
         year_str = f'{file_date.year:04}'
         month_str = f'{file_date.month:02}'
         day_str = f'{file_date.day:02}'
 
-        return Path(self.config.app.base_target_dir) / year_str / month_str / day_str / file_name
+        return PurePosixPath(self.config.app.base_target_dir) / year_str / month_str / day_str / file_name
 
     def create_remote_path_if_missing(self, path: str):
         try:
@@ -115,7 +115,7 @@ class FileMover:
             if not self.dry_run:
                 self.sftp_client.mkdir(path)
 
-    def ensure_target_dir(self, path: Path):
+    def ensure_target_dir(self, path: PurePosixPath):
         for parent in reversed(list(path.parents)):
             self.create_remote_path_if_missing(str(parent))
 
