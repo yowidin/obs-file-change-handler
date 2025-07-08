@@ -3,9 +3,11 @@ import sys
 import paramiko
 
 from argparse import ArgumentParser
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from datetime import date
+from typing import Tuple
 
-from dateutil.parser import parse
+from dateutil.parser import parse, ParserError
 from tqdm import tqdm
 
 from obs_file_change_handler.config import Config
@@ -80,14 +82,29 @@ class FileMover:
 
         return file_paths
 
-    def get_target_path(self, path: Path) -> Path:
-        file_date = parse(path.stem).date()
+    @staticmethod
+    def parse_file_date(path: Path) -> Tuple[date, str]:
+        file_name = path.stem
+
+        # OBS will use '_' instead of ' ' when configured to avoid spaces in output file names.
+        # But this is not a parsable datetime, so we have to fix the file names ourselves.
+        file_name = file_name.replace('_', ' ')
+        new_name = file_name + path.suffix
+
+        try:
+            return parse(file_name).date(), new_name
+        except ParserError:
+            raise RuntimeError(f'Invalid file date "{file_name}"')
+
+
+    def get_target_path(self, path: Path) -> PurePosixPath:
+        file_date, file_name = self.parse_file_date(path)
 
         year_str = f'{file_date.year:04}'
         month_str = f'{file_date.month:02}'
         day_str = f'{file_date.day:02}'
 
-        return Path(self.config.app.base_target_dir) / year_str / month_str / day_str / path.name
+        return PurePosixPath(self.config.app.base_target_dir) / year_str / month_str / day_str / file_name
 
     def create_remote_path_if_missing(self, path: str):
         try:
@@ -98,7 +115,7 @@ class FileMover:
             if not self.dry_run:
                 self.sftp_client.mkdir(path)
 
-    def ensure_target_dir(self, path: Path):
+    def ensure_target_dir(self, path: PurePosixPath):
         for parent in reversed(list(path.parents)):
             self.create_remote_path_if_missing(str(parent))
 
